@@ -1,7 +1,9 @@
 {
     eval_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\base_compares",
+    good_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\2023-08-23",
     match_re: ".*png",
     filename_extract: "(.*)_[0-9]{5}_.png",
-    save_scores: 'C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\base_compares\\scores.json',
+    score_save_filename: 'scores.json',
+    drop_done_list: false,
     display_height: 768,
 }
