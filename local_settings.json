@@ -1,9 +1,18 @@
 {
-    eval_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\base_compares",
-    good_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\2023-08-23",
-    match_re: ".*png",
+    eval_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\Compare",
+    //eval_directory: "A:\\saves",
+    image_match_re: ".*[jp][pn]g",
     filename_extract: "(.*)_[0-9]{5}_.png",
-    score_save_filename: 'scores.json',
-    drop_done_list: false,
-    display_height: 768,
+    
+    good_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\saved\\2023-08-25",
+    good_match: "45",
+    delete_match: "123",
+
+    save_filename: 'scores.json',
+    load_done_list: false,
+    load_scores: true,
+    save: true,
+
+    display_height: 900,
+    log_scores: false,
 }
