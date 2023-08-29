@@ -94,6 +94,9 @@ class Scorer():
 
         labels = len(results)
         count = len(all_scores)
+        if (count==0):
+            print("No scores found")
+            return
         mean = sum(all_scores)/count
         stdv = statistics.stdev(all_scores)
 
@@ -122,6 +125,8 @@ class DataHolder():
         self.image_filepaths = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if r.match(f) and f not in exclude]
         random.shuffle(self.image_filepaths)
         self.image_number = None
+        if len(self.image_filepaths)==0:
+            raise Exception(f"No files in {source_dir} matching {source_regex}")
         
     @property
     def items_left(self):
