@@ -1,16 +1,18 @@
 {
-    eval_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\lora_compare",
+    base: "C:/Users/chris/Documents/GitHub/ComfyUI_windows_portable/ComfyUI/output",
+    eval_directory: "2023-09-01",
     image_match_re: ".*[jp][pn]g",
-    filename_extract: "(.*)_[0-9]{5}_.png",
+    filename_extract_label: "(.*)_Image_[0-9]{5}_.png",
     
-    good_directory: "C:\\Users\\chris\\Documents\\GitHub\\ComfyUI_windows_portable\\ComfyUI\\output\\lora_compare\\good",
-    good_match: "2",
-    delete_match: "",
-
+    score_actions: {
+        "123":"DELETE",
+        "45":"MOVE 2023-09-01/good",
+    },
+    
+    load_filename: 'scores.json',
     save_filename: 'scores.json',
-    load_done_list: false,
-    load_scores: false,
-    save: false,
+    load_file_scores: false,
+    load_scores: true,
 
     display_height: 900,
     log_scores: false,
