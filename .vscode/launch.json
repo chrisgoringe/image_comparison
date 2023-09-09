@@ -8,7 +8,7 @@
             "name": "Python: scorer.py",
             "type": "python",
             "request": "launch",
-            "program": "scorer.py",
+            "program": "image_scorer.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

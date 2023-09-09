@@ -1,7 +1,8 @@
 import customtkinter
-import pyjson5, os, re, random, json, math, statistics
+import os, re, random
 from PIL import Image
 from options import *
+from scorers import Scorer, NoFiles, NoScores
 
 def move_file(frompath, topath):
     i = 0
@@ -26,9 +27,10 @@ def main():
             score_actions.pop(action)
    
     def extract_label(filename):
-        return filename_extract_label.match(filename).group(1) if filename_extract_label and filename_extract_label.match(filename) else 'no-label'
+        return filename_extract_label.match(filename).groups() if filename_extract_label and filename_extract_label.match(filename) else paired_image_sub
     
-    scorer = Scorer(score_load_filepath=load_filepath, 
+    scorer = Scorer(type=scorer_type,
+                    score_load_filepath=load_filepath, 
                     score_save_filepath=save_filepath, 
                     label_extractor=extract_label, 
                     load_file_scores=load_file_scores, 
@@ -37,6 +39,7 @@ def main():
     try:
         data = DataHolder( source_dir=source_directory, 
                         source_regex=image_match_re or ".*png",
+                        paired_image_sub=paired_image_sub,
                         exclude=scorer.files_done )
     except NoFiles:
         print("No new files found")
@@ -46,10 +49,10 @@ def main():
             print("And no saved scores, either")
         return
     
-    def get_size(aspect_ratio):
+    def get_size(aspect_ratio, n=1):
         h = display_height or int(display_width * aspect_ratio)
         w = display_width or int(display_height / aspect_ratio)
-        return (f"{w}x{h}", w, h)
+        return (f"{n*w}x{h}", w, h)
         
     app = customtkinter.CTk()
     app.title("Scorer")
@@ -76,77 +79,8 @@ def main():
         
     app.mainloop()
 
-class NoScores(Exception):
-    pass
-
-class Scorer():
-    def __init__(self, score_load_filepath=None, score_save_filepath=None, label_extractor=lambda a : "no-labeller", load_file_scores=True, load_scores=True):
-        self.label_extractor = label_extractor
-        self.score_save_filepath = score_save_filepath
-        reloaded = pyjson5.load(open(score_load_filepath)) if score_load_filepath and os.path.exists(score_load_filepath) else {}
-        self._scores = reloaded.get('scores',{}) if load_scores else {}
-        self._file_scores = reloaded.get('file_scores',[]) if load_file_scores else []
-
-    @property
-    def files_done(self):
-        return list(a[0] for a in self._file_scores)
-    
-    def score(self, n, filename):
-        """
-        Record a score of `n` to the file `filename`.
-        self._scores is a dictionary mapping label -> list of scores
-        self._file_scores is a list of (filename, score) tuples
-        """
-        n = int(n)
-        label = self.label_extractor(filename)
-        if label not in self._scores:
-            self._scores[label] = []
-        self._scores[label].append(n)
-        self._file_scores.append((filename,n))
-
-    @property
-    def number_scored(self):
-        return len(self._file_scores)
-
-    def report(self):
-        print(self._scores)
-
-    def final_report(self, sort_by="score"):
-        results = {}
-        all_scores = [s for l in self._scores for s in self._scores[l]]
-        if len(all_scores)==0:
-            raise NoScores()
-        
-        for label in self._scores:
-            label_scores = self._scores[label]
-            total_score = sum(label_scores)
-            n = len(label_scores)
-            results[label] = (total_score/n,n)
-
-        labels = len(results)
-        count = len(all_scores)
-        mean = sum(all_scores)/count
-        stdv = statistics.stdev(all_scores)
-
-        if labels>1:
-            for name, (average, number) in sorted(results.items(), key=lambda x:x[1 if sort_by=="score" else 0]):
-                devs = (average - mean)/(stdv/math.sqrt(number))
-                print("{:>35} {:4.2f} ({:>2}) : {:5.2f}".format(name, average, number, devs))
-            print("{:>3} labels, {:>4} images, (mean of {:5.2f} images per label)".format(labels, count, count/labels))
-        else:
-            for score in sorted(set(all_scores)):
-                print("{:1} scored by {:>3} images".format(score, all_scores.count(score)))
-        print("Mean score {:5.2f} +- {:5.2f}".format(mean, stdv))
-
-    def save(self):
-        if self.score_save_filepath:
-            print(json.dumps({'scores':self._scores,'file_scores':self._file_scores}, indent=2), file=open(self.score_save_filepath,'w'))
-
-class NoFiles(Exception):
-    pass
-
 class DataHolder():
-    def __init__(self, source_dir, source_regex=".*", exclude = []):
+    def __init__(self, source_dir, source_regex=".*", paired_image_sub=None, exclude = []):
         """
         Create a DataHolder which contains all files:
         - in directory source_dir
@@ -158,6 +92,10 @@ class DataHolder():
         self.image_filepaths = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if r.match(f) and f not in exclude]
         random.shuffle(self.image_filepaths)
         self.image_number = None
+        if paired_image_sub:
+            self.paired_image_sub = lambda a : (a, re.sub(paired_image_sub[0], paired_image_sub[1], a))
+        else:
+            self.paired_image_sub = lambda a : (a, None)
         if len(self.image_filepaths)==0:
             raise NoFiles(f"No files in {source_dir} matching {source_regex}")
         
@@ -165,12 +103,13 @@ class DataHolder():
     def items_left(self):
         return len(self.image_filepaths) - self.image_number
     
+    
     def image_iterator(self):
         """
         Return an iterator that produces the full filepath of the images
         """
         for self.image_number in range(len(self.image_filepaths)):
-            yield self.image_filepaths[self.image_number]
+            yield self.paired_image_sub(self.image_filepaths[self.image_number])
     
     def image_aspect_ratio(self) -> float:
         """
@@ -197,17 +136,24 @@ class ImageHolder():
         self.callbacks = callbacks
         self.on_dones = on_dones
         self.image_label = customtkinter.CTkLabel(app, text="")
-        self.image_label.grid()
+        self.image_label.grid(row=0, column=0)
+        self.image_label2 = customtkinter.CTkLabel(app, text="")
+        self.image_label2.grid(row=0, column=1)
         self.next_image()
         app.bind("<KeyRelease>", self.keyup)
 
     def next_image(self):
-        self.img_filepath = self.data_holder.__next__()
+        self.img_filepath, self.img_filepath2 = self.data_holder.__next__()
+
         img = Image.open(self.img_filepath)
-        sizes = self.size_calc(img.height/img.width)
+        sizes = self.size_calc(img.height/img.width, (2 if self.img_filepath2 else 1))
         self.app.geometry(sizes[0])
         self.img = customtkinter.CTkImage(light_image=img, size=sizes[1:])
         self.image_label.configure(image=self.img)
+        if self.img_filepath2:
+            img2 = Image.open(self.img_filepath2)
+            self.img2 = customtkinter.CTkImage(light_image=img2, size=sizes[1:])
+            self.image_label2.configure(image=self.img2)
 
     def keyup(self, e):
         try:

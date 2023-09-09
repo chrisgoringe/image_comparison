@@ -1,19 +1,22 @@
 {
+    _scorer_type: 'Label',
+    scorer_type: 'AB',
     base: "C:/Users/chris/Documents/GitHub/ComfyUI_windows_portable/ComfyUI/output",
-    eval_directory: "2023-09-01",
-    image_match_re: ".*[jp][pn]g",
-    filename_extract_label: "(.*)_Image_[0-9]{5}_.png",
+    eval_directory: "compare",
+    image_match_re: "timeless.*[jp][pn]g",
+    paired_image_sub: ["timeless","vivid"],
+    _filename_extract_label: "(.*)_[0-9]{5}_.png",
     
     score_actions: {
-        "123":"DELETE",
-        "45":"MOVE 2023-09-01/good",
+        "":"DELETE",
+        "":"MOVE 2023-09-06/good",
     },
     
     load_filename: 'scores.json',
     save_filename: 'scores.json',
     load_file_scores: false,
-    load_scores: true,
+    load_scores: false,
 
     display_height: 900,
-    log_scores: false,
+    log_scores: true,
 }
