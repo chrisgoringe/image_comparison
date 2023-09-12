@@ -40,7 +40,7 @@ def Scorer(type, **kwargs):
         return LabelScorer(**kwargs)
     elif type=="AB":
         return ABScorer(**kwargs)
-    return Scorer(**kwargs)
+    return BaseScorer(**kwargs)
 
 class LabelScorer(BaseScorer):
     def score(self, n, filename):

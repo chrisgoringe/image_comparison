@@ -92,8 +92,15 @@ class DataHolder():
         self.image_filepaths = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if r.match(f) and f not in exclude]
         random.shuffle(self.image_filepaths)
         self.image_number = None
+        def swap(s,a,b):
+            t = re.sub(a,b,s) if a in s else re.sub(b,a,s)
+            if random.random()<0.5:
+                x=t
+                t=s
+                s=x
+            return (s,t)
         if paired_image_sub:
-            self.paired_image_sub = lambda a : (a, re.sub(paired_image_sub[0], paired_image_sub[1], a))
+            self.paired_image_sub = lambda s : swap(s, paired_image_sub[0], paired_image_sub[1])
         else:
             self.paired_image_sub = lambda a : (a, None)
         if len(self.image_filepaths)==0:
