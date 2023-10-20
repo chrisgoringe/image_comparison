@@ -22,12 +22,15 @@ def main():
                 score_actions[key] = lambda a : move_file(os.path.join(source_directory, a), os.path.join(dir, a))
         elif score_actions[action]=='DELETE':
             for key in action:
-                score_actions[key] = lambda a : os.remove(os.path.join(source_directory,a))
+                score_actions[key] = lambda a : os.remove(os.path.join(source_directory, a))
         else:
             score_actions.pop(action)
    
     def extract_label(filename):
-        return filename_extract_label.match(filename).groups() if filename_extract_label and filename_extract_label.match(filename) else paired_image_sub
+        filename = os.path.split(filename)[1]
+        if filename_extract_label and filename_extract_label.match(filename):
+            return filename_extract_label.match(filename).group(1) 
+        return None
     
     scorer = Scorer(type=scorer_type,
                     score_load_filepath=load_filepath, 
@@ -69,9 +72,11 @@ def main():
         if log_scores:
             scorer.report()
             
-    def do_score_actions(n, filename):
+    def do_score_actions(n, filenames):
         if n in score_actions:
-            score_actions[n](filename)
+            for filename in filenames:
+                filename = os.path.split(filename)[1]
+                score_actions[n](filename)
 
     callbacks= (check_quit, scorer.score, do_score_actions, basic_stats)
 
@@ -80,7 +85,7 @@ def main():
     app.mainloop()
 
 class DataHolder():
-    def __init__(self, source_dir, source_regex=".*", paired_image_sub=None, exclude = []):
+    def __init__(self, source_dir, source_regex=".*", paired_image_sub=None, exclude = [], mix=True):
         """
         Create a DataHolder which contains all files:
         - in directory source_dir
@@ -89,20 +94,14 @@ class DataHolder():
         and then randomly reorders them
         """
         r = re.compile(source_regex)
-        self.image_filepaths = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if r.match(f) and f not in exclude]
+        self.image_filepaths = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if \
+                                    r.match(f) and f not in exclude and \
+                                    (paired_image_sub is None or paired_image_sub[0] in f)]
         random.shuffle(self.image_filepaths)
         self.image_number = None
-        def swap(s,a,b):
-            t = re.sub(a,b,s) if a in s else re.sub(b,a,s)
-            if random.random()<0.5:
-                x=t
-                t=s
-                s=x
-            return (s,t)
-        if paired_image_sub:
-            self.paired_image_sub = lambda s : swap(s, paired_image_sub[0], paired_image_sub[1])
-        else:
-            self.paired_image_sub = lambda a : (a, None)
+        self.paired_image_sub = paired_image_sub
+        self.mix = mix
+
         if len(self.image_filepaths)==0:
             raise NoFiles(f"No files in {source_dir} matching {source_regex}")
         
@@ -110,13 +109,17 @@ class DataHolder():
     def items_left(self):
         return len(self.image_filepaths) - self.image_number
     
-    
     def image_iterator(self):
         """
         Return an iterator that produces the full filepath of the images
         """
         for self.image_number in range(len(self.image_filepaths)):
-            yield self.paired_image_sub(self.image_filepaths[self.image_number])
+            files = [self.image_filepaths[self.image_number]]
+            if self.paired_image_sub:
+                files.extend([files[0].replace(self.paired_image_sub[0],x) for x in self.paired_image_sub[1:]])
+            if self.mix:
+                random.shuffle(files)
+            yield files
     
     def image_aspect_ratio(self) -> float:
         """
@@ -142,30 +145,26 @@ class ImageHolder():
         self.data_holder = data_holder
         self.callbacks = callbacks
         self.on_dones = on_dones
-        self.image_label = customtkinter.CTkLabel(app, text="")
-        self.image_label.grid(row=0, column=0)
-        self.image_label2 = customtkinter.CTkLabel(app, text="")
-        self.image_label2.grid(row=0, column=1)
+        self.image_labels = [customtkinter.CTkLabel(app, text="") for i in range(4)]
+        for i, lab in enumerate(self.image_labels):
+            lab.grid(row=0, column=i)
         self.next_image()
         app.bind("<KeyRelease>", self.keyup)
 
     def next_image(self):
-        self.img_filepath, self.img_filepath2 = self.data_holder.__next__()
+        self.img_filepaths = self.data_holder.__next__()
 
-        img = Image.open(self.img_filepath)
-        sizes = self.size_calc(img.height/img.width, (2 if self.img_filepath2 else 1))
-        self.app.geometry(sizes[0])
-        self.img = customtkinter.CTkImage(light_image=img, size=sizes[1:])
-        self.image_label.configure(image=self.img)
-        if self.img_filepath2:
-            img2 = Image.open(self.img_filepath2)
-            self.img2 = customtkinter.CTkImage(light_image=img2, size=sizes[1:])
-            self.image_label2.configure(image=self.img2)
+        for i, img_filepath in enumerate(self.img_filepaths):
+            img = Image.open(img_filepath)
+            sizes = self.size_calc(img.height/img.width, len(self.img_filepaths))
+            self.app.geometry(sizes[0])
+            self.img = customtkinter.CTkImage(light_image=img, size=sizes[1:])
+            self.image_labels[i].configure(image=self.img)
 
     def keyup(self, e):
         try:
             for method in self.callbacks:
-                method(e.char, os.path.split(self.img_filepath)[1])
+                method(e.char, self.img_filepaths)
             self.next_image()
         except StopIteration:
             for method in self.on_dones:

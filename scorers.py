@@ -43,7 +43,9 @@ def Scorer(type, **kwargs):
     return BaseScorer(**kwargs)
 
 class LabelScorer(BaseScorer):
-    def score(self, n, filename):
+    def score(self, n, filenames):
+        assert len(filenames)==1
+        filename = filenames[0]
         n = int(n)
         label = self.label_extractor(filename)[0]
         if label not in self._scores:
@@ -75,19 +77,17 @@ class LabelScorer(BaseScorer):
         print("Mean score {:5.2f} +- {:5.2f}".format(mean, stdv))
 
 class ABScorer(BaseScorer):
-    def score(self, n, filename):
-        a,b = self.label_extractor(filename)
-        self._scores[a] = self._scores.get(a,[0,0])
-        self._scores[b] = self._scores.get(b,[0,0])
-        if (n=='1'):
-            self._scores[a][0] += 1
-            self._scores[b][1] += 1
-        elif (n=='2'):
-            self._scores[a][1] += 1
-            self._scores[b][0] += 1            
+    def score(self, key, filenames):
+        try:
+            n = int(key)-1
+            filename = filenames[n]
+            a = self.label_extractor(filename)
+            self._scores[a] = self._scores.get(a,0) + 1
+        except:
+            print(f"keypress {key} not scored")
+        
 
     def final_report(self, sort_by="score"):
         for label in self._scores:
             score = self._scores[label]
-            percent = 100*(score[0]/(score[0]+score[1]))
-            print("{:>5} wins {:>2} losses {:>2} ({:>5.1f}%)".format(label, *score, percent))
+            print("{:>35} wins {:>2} ".format(label, score))

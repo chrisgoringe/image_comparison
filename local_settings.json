@@ -1,22 +1,24 @@
 {
-    _scorer_type: 'Label',
-    _scorer_type: 'AB',
     base: "C:/Users/chris/Documents/GitHub/ComfyUI_windows_portable/ComfyUI/output",
-    eval_directory: "comparex-front",
-    image_match_re: ".*[jp][pn]g",
-    _paired_image_sub: ["more2-05","vtp-30"],
-    _filename_extract_label: "(.*)_[0-9]{5}_.png",
+    eval_directory: "2023-10-20",
+    image_match_re: ".*png",
+    filename_extract_label: "(.*)_[0-9]{5}_.png",
+    
+    _scorer_type: 'AB',
+    _paired_image_sub: ["puff10","puff15"],
+    
+    _scorer_type: 'Label',
+
+    load_file_scores: false,
+    load_scores: false,
+    load_filename: 'scores.json',
+    save_filename: 'scores.json',
     
     score_actions: {
         "1":"DELETE",
-        "2":"MOVE comparex-front/2023-09-11",
+        "2":"MOVE 2023-10-20/2023-10-20",
     },
     
-    load_filename: 'scores.json',
-    save_filename: 'scores.json',
-    load_file_scores: false,
-    load_scores: false,
-
     display_height: 900,
     log_scores: true,
 }
