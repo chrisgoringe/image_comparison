@@ -12,6 +12,10 @@ def move_file(frompath, topath):
         topath=split[0]+f" ({i})"+split[1]
     os.rename(frompath, topath)
 
+def make_move(source, dir):
+    d = dir
+    return lambda a : move_file(os.path.join(source, a), os.path.join(d, a))
+
 def main():
     for action in list(score_actions):
         if score_actions[action][:4]=="MOVE":
@@ -19,7 +23,7 @@ def main():
             if not os.path.exists(dir):
                 os.makedirs(dir)
             for key in action:
-                score_actions[key] = lambda a : move_file(os.path.join(source_directory, a), os.path.join(dir, a))
+                score_actions[key] = make_move(source_directory, dir)
         elif score_actions[action]=='DELETE':
             for key in action:
                 score_actions[key] = lambda a : os.remove(os.path.join(source_directory, a))
