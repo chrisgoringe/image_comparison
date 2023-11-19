@@ -1,11 +1,11 @@
 {
     base: "C:/Users/chris/Documents/GitHub/ComfyUI_windows_portable/ComfyUI/output",
-    eval_directory: "2023-11-07",
+    eval_directory: "compare",
     image_match_re: ".*png",
     filename_extract_label: "(.*)_[0-9]{5}_.png",
     
     _scorer_type: 'AB',
-    _paired_image_sub: ["socamergeRealismXL_vae13","notRealRealisticXL_v10a"],
+    _paired_image_sub: ["x","y"],
     
     _scorer_type: 'Label',
 
@@ -15,8 +15,10 @@
     save_filename: 'scores.json',
     
     score_actions: {
-        "1":"MOVE 2023-11-07/rejects",
-        "2":"MOVE 2023-11-07/2023-11-07",
+        "12345678":"SCORE compare",
+        "":"MOVE theonepercent/fakes",
+        "":"MOVE theonepercent/broken",
+        "":"MOVE theonepercent/2023-11-16",
     },
     
     display_height: 900,
