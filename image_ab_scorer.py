@@ -108,7 +108,7 @@ class ImageDatabase:
         return len(self.image_records)
     
     @property
-    def summary(self):
+    def printable(self):
         return "{:>6} comparisons for {:>6} images.".format(self.total_comparisons, self.image_count)
 
     def remove_missing(self):
@@ -168,7 +168,7 @@ class ScoreUpdater:
         self.total_comparisons += 1
 
     @property
-    def summary(self):
+    def printable(self):
         return "Average p value for chosen result {:>6.4f}%. Average bestp {:>6.4f}%. Choice matched {:>6.4f}%.".format(
                 self.average_p * 100, self.average_bestp * 100, self.total_favourite_wins * 100 / self.total_comparisons )
 
@@ -211,7 +211,7 @@ class TheApp:
             self.database.save_scores()
             self.database.save_csv()
             if Args.show_top_n: print("\n".join((ir.printable for ir in self.database.records[:Args.show_top_n])))
-            summary = self.database.summary + " " + self.score_updater.summary
+            summary = self.database.printable + " " + self.score_updater.printable
             print(summary)
             with open('summary.txt','a') as f: print(summary,file=f)
             self.app.quit()
