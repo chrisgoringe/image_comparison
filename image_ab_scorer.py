@@ -12,7 +12,7 @@ class Args:
     # tell me how many images have fewer than this number of comparisons at the end
     threshold = 5
     # How many comparisons to do
-    max_comparisons = 10
+    max_comparisons = 100
     # How many images to compare each time
     image_count = 2
     # Show top n at the end (0 for off)
@@ -20,7 +20,7 @@ class Args:
     # how rapidly to update scores 
     k = 0.7
     # reload scores from previous runs
-    reload_if_available = False
+    reload_if_available = True
 
 
 @dataclasses.dataclass
@@ -102,6 +102,14 @@ class ImageDatabase:
     @property
     def total_comparisons(self):
         return sum(self.image_records[r].comparisons for r in self.image_records)
+    
+    @property
+    def image_count(self):
+        return len(self.image_records)
+    
+    @property
+    def summary(self):
+        return "{:>6} comparisons for {:>6} images.".format(self.total_comparisons, self.image_count)
 
     def remove_missing(self):
         missing = []
@@ -144,6 +152,8 @@ class ScoreUpdater:
         self.k = k
         self.total_comparisons = 0
         self.average_p = 0
+        self.average_bestp = 0
+        self.total_favourite_wins = 0
 
     def update_scores(self, winner:ImageRecord, loser:ImageRecord):
         delta = winner.score - loser.score
@@ -153,7 +163,14 @@ class ScoreUpdater:
         winner.comparisons += 1
         loser.comparisons += 1
         self.average_p = (self.total_comparisons * self.average_p + p)/(self.total_comparisons + 1)
+        self.average_bestp = (self.total_comparisons * self.average_bestp + max(p,1-p))/(self.total_comparisons + 1)
+        self.total_favourite_wins += (p>0.5)
         self.total_comparisons += 1
+
+    @property
+    def summary(self):
+        return "Average p value for chosen result {:>6.4f}%. Average bestp {:>6.4f}%. Choice matched {:>6.4f}%.".format(
+                self.average_p * 100, self.average_bestp * 100, self.total_favourite_wins * 100 / self.total_comparisons )
 
 class TheApp:
     def __init__(self):
@@ -194,7 +211,7 @@ class TheApp:
             self.database.save_scores()
             self.database.save_csv()
             if Args.show_top_n: print("\n".join((ir.printable for ir in self.database.records[:Args.show_top_n])))
-            summary = "{:>6} comparisons. Average p value for chosen result {:>6.4f}%".format(self.database.total_comparisons, self.score_updater.average_p * 100)
+            summary = self.database.summary + " " + self.score_updater.summary
             print(summary)
             with open('summary.txt','a') as f: print(summary,file=f)
             self.app.quit()

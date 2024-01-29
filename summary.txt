@@ -1,1 +1,9 @@
-    20 comparisons. Average p value for chosen result 50.0000%
+   200 comparisons for    790 images. Average p value for chosen result 52.8173%. Average bestp 54.1151%
+   400 comparisons for    790 images. Average p value for chosen result 52.2216%. Average bestp 58.7251%
+   600 comparisons for    790 images. Average p value for chosen result 56.4885%. Average bestp 64.2408%
+   800 comparisons for    790 images. Average p value for chosen result 58.1098%. Average bestp 66.3044%
+  1000 comparisons for    790 images. Average p value for chosen result 57.3556%. Average bestp 69.7153%
+  1200 comparisons for    790 images. Average p value for chosen result 58.2721%. Average bestp 69.6710%
+  1400 comparisons for    790 images. Average p value for chosen result 62.4906%. Average bestp 70.8813%
+  1600 comparisons for    790 images. Average p value for chosen result 62.1571%. Average bestp 71.3461%. Choice matched 68.0000%.
+  1800 comparisons for    790 images. Average p value for chosen result 64.4338%. Average bestp 73.9294%. Choice matched 71.0000%.
