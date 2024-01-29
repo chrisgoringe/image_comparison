@@ -4,6 +4,8 @@ from PIL import Image
 from options import *
 from scorers import Scorer, NoFiles, NoScores
 
+TEXT_HEIGHT=100
+
 def move_file(frompath, topath):
     i = 0
     split = os.path.splitext(topath)
@@ -60,10 +62,10 @@ def main():
             print("And no saved scores, either")
         return
     
-    def get_size(aspect_ratio, n=1):
+    def get_size(aspect_ratio, n=1, padding = TEXT_HEIGHT):
         h = display_height or int(display_width * aspect_ratio)
         w = display_width or int(display_height / aspect_ratio)
-        return (f"{n*w}x{h}", w, h)
+        return (f"{n*w}x{h+padding}", w, h)
         
     app = customtkinter.CTk()
     app.title("Scorer")
@@ -86,9 +88,16 @@ def main():
                 filename = os.path.split(filename)[1]
                 score_actions[n](filename)
 
+    def textfile_loader(imgfile):
+        txtfilename = os.path.splitext(imgfile)[0]+".txt"
+        if os.path.exists(txtfilename):
+            with open(txtfilename,'r') as f:
+                return "".join(f.readlines())
+        return None
+
     callbacks= (check_quit, scorer.score, do_score_actions, basic_stats)
 
-    ImageHolder( app, data.image_iterator(), callbacks=callbacks, on_dones=on_dones, size_calc=get_size )
+    ImageHolder( app, data.image_iterator(), text_source=textfile_loader, callbacks=callbacks, on_dones=on_dones, size_calc=get_size, imgs_per_item=data.images_per_item )
         
     app.mainloop()
 
@@ -114,6 +123,10 @@ class DataHolder():
             raise NoFiles(f"No files in {source_dir} matching {source_regex}")
         
     @property
+    def images_per_item(self):
+        return len(self.paired_image_sub)
+        
+    @property
     def items_left(self):
         return len(self.image_filepaths) - self.image_number
     
@@ -137,14 +150,17 @@ class DataHolder():
         return img.height / img.width
 
 class ImageHolder():
-    def __init__(self, app:customtkinter.CTk, data_holder:iter, callbacks=(), on_dones=(), size_calc=None):
+    def __init__(self, app:customtkinter.CTk, data_holder:iter, text_source:callable=lambda a:None, callbacks=(), on_dones=(), size_calc=None, imgs_per_item=2):
         """
         Create an ImageHolder to display images as part of a CTk app, and respond to keypresses.
         app - the app of which this is part
-        data_holder - the generator of filenames
-        size - a tuple (w,h)
+        data_holder - an iterator generating a tuple of image constituting an item
+        text_source - a callable that takes an image filepath and returns a text caption or None
         callbacks - a tuple of methods to be called in order for any keypress, with signature (key:string, filename:string)
         on_dones - a tuple of methods to be called in order when there are no more images to show, or when a callback raises StopIteration(), signature ()
+        size_calc - a callable that calculates sizes, signature (aspect_ratio, n=1, padding=TEXT_HEIGHT), returning (size:str, w:int, h:int) where 
+                    size is of the form "wxh" suitable for tkinter, and w and h are width and height of a single image.
+        imgs_per_item - a hint at the expected number of images in an item
 
         Any callback can rise StopIteration() to terminate the program - no further callbacks are processed, the on_dones are 
         """
@@ -154,13 +170,17 @@ class ImageHolder():
         self.callbacks = callbacks
         self.on_dones = on_dones
         self.image_labels = [customtkinter.CTkLabel(app, text="") for i in range(4)]
+        self.text_line = customtkinter.CTkLabel(app, text="", height = TEXT_HEIGHT)
         for i, lab in enumerate(self.image_labels):
             lab.grid(row=0, column=i)
+        self.text_line.grid(row=1,column=0, columnspan=imgs_per_item)
+        self.text_source = text_source
         self.next_image()
         app.bind("<KeyRelease>", self.keyup)
 
     def next_image(self):
         self.img_filepaths = self.data_holder.__next__()
+        newtext = self.text_source(self.img_filepaths[0]) or ""
 
         for i, img_filepath in enumerate(self.img_filepaths):
             img = Image.open(img_filepath)
@@ -168,6 +188,9 @@ class ImageHolder():
             self.app.geometry(sizes[0])
             self.img = customtkinter.CTkImage(light_image=img, size=sizes[1:])
             self.image_labels[i].configure(image=self.img)
+
+        if (newtext := self.text_source(self.img_filepaths[0])):
+            self.text_line.configure(text=newtext)
 
     def keyup(self, e):
         try:

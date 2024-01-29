@@ -1,0 +1,1 @@
+    20 comparisons. Average p value for chosen result 50.0000%

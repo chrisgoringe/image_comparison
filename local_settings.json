@@ -1,11 +1,11 @@
 {
     base: "C:/Users/chris/Documents/GitHub/ComfyUI_windows_portable/ComfyUI/output",
-    eval_directory: "compare",
-    image_match_re: ".*png",
+    eval_directory: "compare2",
+    image_match_re: "envy.*png",
     filename_extract_label: "(.*)_[0-9]{5}_.png",
     
-    _scorer_type: 'AB',
-    _paired_image_sub: ["x","y"],
+    scorer_type: 'AB',
+    paired_image_sub: ["envy1", "dig2", "jib7", "albedo2"],
     
     _scorer_type: 'Label',
 
@@ -15,12 +15,10 @@
     save_filename: 'scores.json',
     
     score_actions: {
-        "12345678":"SCORE compare",
-        "":"MOVE theonepercent/fakes",
-        "":"MOVE theonepercent/broken",
-        "":"MOVE theonepercent/2023-11-16",
+        "":"DELETE",
+        "":"MOVE compare/keep",
     },
     
-    display_height: 900,
+    display_height: 600,
     log_scores: true,
 }
