@@ -1,16 +1,14 @@
 import dataclasses
-import os, json, random, math
+import os, json, random, math, threading, time
 from PIL import Image
 import customtkinter
 
 class Args:
-    top_level_image_directory = r"C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\compare"
+    top_level_image_directory = r"C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\training"
     # How strongly to prefer images that have been shown less. 0 = totally random, 0.999 = very very strong preference. Weight is (1-lcw)^(-comparisons)
     low_count_weight =  0.4 
     # Preferred height of the window on your screen  
     height = 800
-    # tell me how many images have fewer than this number of comparisons at the end
-    threshold = 5
     # How many comparisons to do
     max_comparisons = 100
     # How many images to compare each time
@@ -22,6 +20,13 @@ class Args:
     # reload scores from previous runs
     reload_if_available = True
 
+    score_filename = "image_scores.json"
+    csv_filename = "image_scores.csv"
+
+    # experimental/testing - leave False
+    one_pass = False
+    automate = False
+
 
 @dataclasses.dataclass
 class ImageRecord:
@@ -32,6 +37,9 @@ class ImageRecord:
     @property
     def printable(self):
         return f"'{self.relative_filepath}',"+"{:>6.3f},{:>4}".format(self.score, self.comparisons)
+    
+    def __hash__(self):
+        return self.relative_filepath.__hash__()
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -48,7 +56,7 @@ class ImageDatabase:
         if add_files: self.recursively_add()
         if remove_files: self.remove_missing()
 
-    def load_scores(self, filename="image_scores.json"):
+    def load_scores(self, filename=Args.score_filename):
         scores_path = os.path.join(self.base_directory,filename)
         if os.path.exists(scores_path):
             with open(scores_path,'r') as f:
@@ -57,12 +65,12 @@ class ImageDatabase:
                 for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
                 self.metadata = loaded.get('Metadata', {})
 
-    def save_scores(self, filename="image_scores.json"):
+    def save_scores(self, filename=Args.score_filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
             print(json.dumps({"ImageRecords":self.image_records, "Metadata":self.metadata}, indent=2, cls=EnhancedJSONEncoder), file=f)
 
-    def save_csv(self, filename="image_scores.csv"):
+    def save_csv(self, filename=Args.csv_filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
             for relative_path in self.image_records:
@@ -139,7 +147,7 @@ class ImageChooser:
         weighter = weighter or cls.weighter(low_count_weight)
         return ImageChooser(database.records, weighter)
 
-    @staticmethod
+    @classmethod
     def weighter(cls, low_count_weight=0.0):
         if low_count_weight:
             def lcw(ir:ImageRecord):
@@ -171,6 +179,49 @@ class ScoreUpdater:
     def printable(self):
         return "Average p value for chosen result {:>6.4f}%. Average bestp {:>6.4f}%. Choice matched {:>6.4f}%.".format(
                 self.average_p * 100, self.average_bestp * 100, self.total_favourite_wins * 100 / self.total_comparisons )
+    
+class OnePassScoreUpdater:
+    def __init__(self,records:list[ImageRecord]):
+        for r in records: 
+            r.unknowns = set([r2 for r2 in records if r!=r2])
+            r.above = set()
+        self.records = records
+
+    def update_scores(self, winner:ImageRecord, loser:ImageRecord):
+        assert winner in loser.unknowns and loser in winner.unknowns
+        winner.above.add(loser)
+        winner.unknowns.remove(loser)
+        loser.unknowns.remove(winner)
+        for third in self.records:
+            if third in loser.above and third in winner.unknowns:
+                self.update_scores(winner, third)
+            if winner in third.above and loser in third.unknowns:
+                self.update_scores(third, loser)
+
+        winner.score = len(winner.above)
+
+    @property
+    def total_left(self):
+        return sum(len(r.unknowns) for r in self.records)
+    
+    @property
+    def printable(self):
+        return "{:>6} unknowns for {:>5} images.".format(self.total_left, len(self.records))
+
+class OnePassImageChooser:
+    def __init__(self, image_records:list[ImageRecord]):
+        self.image_records = image_records
+
+    def pick_images(self, number) -> list[ImageRecord]:
+        weights = [1/len(x.unknowns) if x.unknowns else 0 for x in self.image_records]
+        choice1 = random.choices(self.image_records, weights=weights, k=1)[0]
+        weights = [len(x.unknowns) for x in choice1.unknowns]
+        choice2 = random.choices(list(choice1.unknowns), weights=weights, k=1)[0]
+        return (choice1, choice2)
+    
+    @classmethod
+    def from_database(cls, database:ImageDatabase):
+        return OnePassImageChooser(database.records)
 
 class TheApp:
     def __init__(self):
@@ -179,8 +230,12 @@ class TheApp:
         self.database = ImageDatabase(Args.top_level_image_directory, load=Args.reload_if_available)
         print(f"Comparing {len(self.database.records)} images")
         assert len(self.database.records) >= 2
-        self.image_chooser = ImageChooser.from_database(self.database, low_count_weight=Args.low_count_weight)
-        self.score_updater = ScoreUpdater(Args.k)
+        if Args.one_pass:
+            self.image_chooser = OnePassImageChooser.from_database(self.database)
+            self.score_updater = OnePassScoreUpdater(self.database.records)
+        else:
+            self.image_chooser = ImageChooser.from_database(self.database, low_count_weight=Args.low_count_weight)
+            self.score_updater = ScoreUpdater(Args.k)
         self.count = 0
 
         maw = self.database.max_aspect_ratio()
@@ -193,11 +248,26 @@ class TheApp:
         self.app.bind("<KeyRelease>", self.keyup)
         self.pick_images()
 
+        if Args.automate:
+            class M:
+                def __init__(self):
+                    self.char = ""
+
+            def dorandom():
+                k = M()
+                while(True):
+                    k.char = "1" if random.random()>0.5 else "2"
+                    self.keyup(k)
+                    time.sleep(0.1)
+            self.t = threading.Thread(target = dorandom, daemon=True)
+            self.t.start()
+
     def pick_images(self):
         self.image_records = self.image_chooser.pick_images(Args.image_count)
-        for i, image_record in enumerate(self.image_records):
-            im = Image.open(os.path.join(Args.top_level_image_directory, image_record.relative_filepath))
-            self.image_labels[i].configure(image = customtkinter.CTkImage(light_image=im, size=(int(Args.height*im.width/im.height),Args.height)))
+        if not Args.automate:
+            for i, image_record in enumerate(self.image_records):
+                im = Image.open(os.path.join(Args.top_level_image_directory, image_record.relative_filepath))
+                self.image_labels[i].configure(image = customtkinter.CTkImage(light_image=im, size=(int(Args.height*im.width/im.height),Args.height)))
 
     def keyup(self,k):
         if k.char in "123456789"[:Args.image_count+1]: 
@@ -205,8 +275,9 @@ class TheApp:
             for i in range(Args.image_count):
                 if i!=win: self.score_updater.update_scores(winner = self.image_records[win], loser=self.image_records[i])
             self.count += 1
-            self.pick_images()
-        if self.count==Args.max_comparisons or k.char=='q':
+            if not (Args.one_pass and self.score_updater.total_left==0):
+                self.pick_images()
+        if (self.count==Args.max_comparisons and not Args.one_pass) or k.char=='q' or (Args.one_pass and self.score_updater.total_left==0):
             self.database.sort(reverse=True)
             self.database.save_scores()
             self.database.save_csv()
@@ -217,6 +288,7 @@ class TheApp:
             self.app.quit()
         if self.count % 10 == 0:
             print(self.count)
+            if Args.one_pass: print(self.score_updater.printable)
 
 def main():
     a = TheApp()
