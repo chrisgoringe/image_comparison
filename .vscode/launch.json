@@ -4,13 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Python: scorer.py",
-            "type": "python",
-            "request": "launch",
-            "program": "image_scorer.py",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
+        
+
+
     ]
 }

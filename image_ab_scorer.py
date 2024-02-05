@@ -136,7 +136,8 @@ class ImageChooser:
 
     def pick_images(self, number) -> list[ImageRecord]:
         weights = [self.weighter(x) for x in self.image_records]
-        choices = random.choices(self.image_records, weights=weights, k=number)
+        choices = random.choices(self.image_records, weights=weights, k=number-1)
+        choices.append(random.choice(self.image_records))
         for i,c in enumerate(choices):
             if c in choices[i+1:]:
                 return self.pick_images(number)
@@ -267,7 +268,10 @@ class TheApp:
         if not Args.automate:
             for i, image_record in enumerate(self.image_records):
                 im = Image.open(os.path.join(Args.top_level_image_directory, image_record.relative_filepath))
-                self.image_labels[i].configure(image = customtkinter.CTkImage(light_image=im, size=(int(Args.height*im.width/im.height),Args.height)))
+                try:
+                    self.image_labels[i].configure(image = customtkinter.CTkImage(light_image=im, size=(int(Args.height*im.width/im.height),Args.height)))
+                except:
+                    print(image_record)
 
     def keyup(self,k):
         if k.char in "123456789"[:Args.image_count+1]: 
@@ -287,8 +291,8 @@ class TheApp:
             with open('summary.txt','a') as f: print(summary,file=f)
             self.app.quit()
         if self.count % 10 == 0:
-            print(self.count)
             if Args.one_pass: print(self.score_updater.printable)
+        self.app.title(f"{self.count}/{Args.max_comparisons}")
 
 def main():
     a = TheApp()
