@@ -4,11 +4,11 @@ from PIL import Image
 import customtkinter
 
 class Args:
-    top_level_image_directory = r"C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\training"
+    top_level_image_directory = r"C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\training4"
     # How strongly to prefer images that have been shown less. 0 = totally random, 0.999 = very very strong preference. Weight is (1-lcw)^(-comparisons)
     low_count_weight =  0.4 
     # Preferred height of the window on your screen  
-    height = 800
+    height = 768
     # How many comparisons to do
     max_comparisons = 100
     # How many images to compare each time
@@ -27,25 +27,24 @@ class Args:
     one_pass = False
     automate = False
 
-
-@dataclasses.dataclass
 class ImageRecord:
-    relative_filepath:str
-    comparisons:int = 0
-    score:float = 0
+    def __init__(self,relative_filepath,comparisons=0,score=0.0):
+        self.relative_filepath = os.path.normpath(relative_filepath)
+        self.comparisons = comparisons
+        self.score = score
 
     @property
     def printable(self):
         return f"'{self.relative_filepath}',"+"{:>6.3f},{:>4}".format(self.score, self.comparisons)
     
-    def __hash__(self):
-        return self.relative_filepath.__hash__()
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
+    #def __hash__(self):
+    #    return self.relative_filepath.__hash__()
+    
+    @property
+    def as_dictionary(self):
+        return {"relative_filepath" : self.relative_filepath,
+                "score" : self.score,
+                "comparisons" : self.comparisons}
 
 class ImageDatabase:
     def __init__(self, base_directory, load=True, add_files=True, remove_files=True):
@@ -65,10 +64,15 @@ class ImageDatabase:
                 for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
                 self.metadata = loaded.get('Metadata', {})
 
+    @property
+    def as_dictionary(self):
+        return { "ImageRecords" : { f : self.image_records[f].as_dictionary for f in self.image_records },
+                 "Metadata" : self.metadata }
+
     def save_scores(self, filename=Args.score_filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
-            print(json.dumps({"ImageRecords":self.image_records, "Metadata":self.metadata}, indent=2, cls=EnhancedJSONEncoder), file=f)
+            print(json.dumps(self.as_dictionary, indent=2), file=f)
 
     def save_csv(self, filename=Args.csv_filename):
         scores_path = os.path.join(self.base_directory,filename)
@@ -86,7 +90,7 @@ class ImageDatabase:
         for (dir_path, dir_names, file_names) in os.walk(self.base_directory):
             rel_dir = os.path.relpath(dir_path, self.base_directory)
             for filename in file_names:
-                relative_path = os.path.join(rel_dir,filename)
+                relative_path = os.path.relpath(os.path.join(rel_dir,filename))
                 if not relative_path in self.image_records:
                     fullpath = os.path.join(dir_path, filename)
                     try:
@@ -281,7 +285,7 @@ class TheApp:
             self.count += 1
             if not (Args.one_pass and self.score_updater.total_left==0):
                 self.pick_images()
-        if (self.count==Args.max_comparisons and not Args.one_pass) or k.char=='q' or (Args.one_pass and self.score_updater.total_left==0):
+        if (self.count>=Args.max_comparisons and not Args.one_pass) or k.char=='q' or (Args.one_pass and self.score_updater.total_left==0):
             self.database.sort(reverse=True)
             self.database.save_scores()
             self.database.save_csv()
