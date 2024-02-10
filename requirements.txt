@@ -1,2 +1,3 @@
 pyjson5
 customtkinter
+scipy
