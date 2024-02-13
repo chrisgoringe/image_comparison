@@ -2,28 +2,39 @@
 
 From a set of images, creates an `image_scores.json` file suitable for training a model (or other use).
 
-Edit the top of the `image_ab_scorer.py` file - the only things you need to change are:
-- `top_level_image_directory` should point to a directory holding the images (subdirectories are included)
-- `load_from` which should be `""` for your first run, and then the same as `score_filename` thereafter. 
-That way the scores will be loaded from and saved to the same file, but that's ok, because a numbered backup is also saved each time
-under the name `[savename]_xxxx.json`
+```
+python image_ab_scorer.py --help
+usage: Score a set of images by a series of AB comparisons [-h] -d DIRECTORY [-s SCORES] [-r] [-c CSVFILE] [--lcw LCW] [--height HEIGHT] [--number NUMBER] [--number_to_compare NUMBER_TO_COMPARE] [--k K] [--weight_by_speed] [--default_seconds DEFAULT_SECONDS] [--weight_min WEIGHT_MIN] [--weight_max WEIGHT_MAX]
 
-```python
-# The directory where the images are (subfolders are included)
-    top_level_image_directory = r""
-# ...stuff to leave for now...
-
-# Scores file (in the top_level_image_directory) to load from. Set to "" or None to start without any scores.
-    load_from = "scores.json"
-# Name under which to save the scores at the end. An additional file, `same_name_x.json` (where x is number of comparisons to date) is also saved.
-    score_filename = "scores.json"
-# Save a csv file as well?
-    csv_filename = None
+options:
+  -h, --help            show this help message and exit
+  -d DIRECTORY, --directory DIRECTORY
+                        Top level directory
+  -s SCORES, --scores SCORES
+                        Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved
+  -r, --restart         Force a restart (don't reload scores file even if present)
+  -c CSVFILE, --csvfile CSVFILE
+                        Save scores as a csv in this file (relative to top level directory) as well as in the scores file
+  --lcw LCW             Weighting priority towards less frequently compared images (0-0.99)
+  --height HEIGHT       Height of window
+  --number NUMBER       Number of sets of images to compare
+  --number_to_compare NUMBER_TO_COMPARE
+                        Number of images to choose from
+  --k K                 K value for score updates
+  --weight_by_speed     Weight fast responses more (see also --default_seconds, --weight_min, --weight_max)
+  --default_seconds DEFAULT_SECONDS
+                        Typical response time (requires --weight_by_speed)
+  --weight_min WEIGHT_MIN
+                        Minimum weighting for slow responses (requires --weight_by_speed)
+  --weight_max WEIGHT_MAX
+                        Maximum weighting for fase responses (requires --weight_by_speed)
 ```
 
-Then run. Click 1 to prefer the left image, 2 to prefer the right image, or q to quit.
+The only required parameter is `-d DIRECTORY` which should point to a directory holding the images (subdirectories are included).
 
-Then edit the file to set `load_from` to the same as `score_filename` and run a few more times.
+Click 1 to prefer the left image, 2 to prefer the right image, or q to quit.
+
+At the end of the run, you'll have (in DIRECTORY) a scorefile (`scores.json`), and a progress scorefile (`scores_200.json`). There will also be a summary stats line appended to `summary.txt`.
 
 ## Comparing and converging
 
@@ -36,12 +47,24 @@ scores_1000.json
 ```
 (note that 100 AB comparisons counts as 200, because we keep track of comparisons per image)
 
-If you take a look at `compare_scorefiles.py` and edit 
-```python
-    top_level_image_directory = r"C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\training4"
-    score_filename = "scores.json"
+Now you can use `compare_scorefiles.py`:
+
 ```
-appropriately then run it, you should get a graph like this (this example is for an example which has had lots of runs!):
+python compare_scorefiles.py --help
+usage: Compare a series of scorefiles [-h] -d DIRECTORY [-n] [-s SCORES] [-m MODEL_SCOREFILE]
+
+options:
+  -h, --help            show this help message and exit
+  -d DIRECTORY, --directory DIRECTORY
+                        Top level directory
+  -n, --no_plot         Don't show a graph
+  -s SCORES, --scores SCORES
+                        Filename of scores file (relative to top level directory)
+  -m MODEL_SCOREFILE, --model_scorefile MODEL_SCOREFILE
+                        Plot comparison with model scorefile
+```
+
+Again, you should just need to specify `DIRECTORY` to get a graph like this (this example is for an example which has had lots of runs!):
 
 ![scorefile](media/scorefile_convergence.png)
 
@@ -80,24 +103,22 @@ The scores are updated using [Elo ratings](https://en.wikipedia.org/wiki/Elo_rat
         winner.score += (1-p) * k_fac * self.k
         loser.score -= (1-p) * k_fac * self.k
 ```
-`k = 0.7` and `k_fac = 1.0` by default. In the arguments you'll find this:
-```python
-    k = 0.7
-    weight_k_by_speed = False
-    default_seconds = 1.2
-    weighting_limits = (0.5, 2.0)
-```
-If you set `weight_k_by_speed` to true, then the speed with which you make your decision will be taken into account - 
+`k = 0.7` and `k_fac = 1.0` by default. 
+
+If you set `weight_by_speed` to true, then the speed with which you make your decision will be taken into account - 
 quick decisions will be weighted more than slow ones (you had to think, so maybe it's close...). The weighting is
-given by `k_fac = Args.default_seconds / time_taken`, with `k_fac` clamped within `weighting_limits = (min, max)`.
+given by `k_fac = default_seconds / time_taken`, with `k_fac` clamped within `(weight_min, weight_max)`.
+
 Default seconds should be your typical decision time (given at the end of each run)
 
-## AB Comparison theory
+# AB Comparison theory
 
 In theory, a set of N images can be fully ordered in approximately `X=ln(2).N.(ln(N)-1)` comparisons.
 
+_This result can be obtained by considering adding a new image to a set of `n` images. By comparing with an image in the middle, its position can be placed in one half or the other;
+so the number of comparisons required is `log2(n)`. Apply a continuum approximation, and the total number of comparisons is given by the integral of `log2(n)` from `n=1` to `n=N`._
 
-, so comparisons per image is `X/N = ln(2).(ln(N)-1)`.
+So comparisons per image is `X/N = ln(2).(ln(N)-1)`.
 
 |N|X|X/N|
 |-|-|-|

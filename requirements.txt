@@ -1,3 +1,4 @@
 pyjson5
 customtkinter
 scipy
+matplotlib
