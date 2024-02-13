@@ -24,13 +24,16 @@ def parse_arguments():
 
     Args.namespace = parser.parse_args()
 
-class Args:
-    namespace = None
-    @classmethod
-    def __getattribute__(cls, attr):
-        if hasattr(cls.namespace, attr): return cls.namespace.attr
-        if attr=='load_from': return None if cls.namespace.restart else cls.namespace.scores
+class _Args(object):
+    def __init__(self):
+        self.namespace = None
+
+    def __getattr__(self, attr):
+        if hasattr(self.namespace, attr): return getattr(self.namespace,attr)
+        if attr=='load_from': return None if self.namespace.restart else self.namespace.scores
         raise Exception(f"Don't know about {attr}")
+    
+Args = _Args()
 
 def clamp(n, min, max): return min if n < min else (max if n > max else n)
 
