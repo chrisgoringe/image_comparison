@@ -31,7 +31,7 @@ class _Args(object):
     def __getattr__(self, attr):
         if hasattr(self.namespace, attr): return getattr(self.namespace,attr)
         if attr=='load_from': return None if self.namespace.restart else self.namespace.scores
-        raise Exception(f"Don't know about {attr}")
+        raise KeyError(attr)
     
 Args = _Args()
 

@@ -28,11 +28,14 @@ class ImageDatabase:
 
     def load_scores(self, filename):
         scores_path = os.path.join(self.base_directory,filename)
-        with open(scores_path,'r') as f:
-            loaded:dict = json.load(f)
-            self.image_records = loaded.get('ImageRecords',[])
-            for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
-            self.metadata = loaded.get('Metadata', {})
+        if os.path.exists(scores_path):
+            with open(scores_path,'r') as f:
+                loaded:dict = json.load(f)
+                self.image_records = loaded.get('ImageRecords',[])
+                for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
+                self.metadata = loaded.get('Metadata', {})
+        else:
+            print(f"No scorefile to load at {scores_path}")
 
     @property
     def as_dictionary(self):
