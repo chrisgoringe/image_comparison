@@ -5,11 +5,14 @@ import scipy
 from modules.scoring import ImageDatabase, ImageRecord, ScoreUpdater
 
 def parse_arguments():
+    to_string_list = lambda s : list( x.strip() for x in s.split(',') )
+
     parser = argparse.ArgumentParser("Score a set of images by a series of AB comparisons")
     parser.add_argument('-d', '--directory', help="Top level directory", required=True)
     parser.add_argument('-s', '--scores', default="scores.json", help="Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved")
     parser.add_argument('-r', '--restart', action="store_true", help="Force a restart (don't reload scores file even if present)")
     parser.add_argument('-c', '--csvfile', help="Save scores as a csv in this file (relative to top level directory) as well as in the scores file")
+    parser.add_argument('-t', '--trust', type=to_string_list, help="Comma separated list of extensions that are trusted to be images (eg -t=.jpg,.png)")
 
     parser.add_argument('--lcw', type=float, default=0.4, help="Weighting priority towards less frequently compared images (0-0.99)")
     parser.add_argument('--height', type=int, default=768, help="Height of window")
@@ -23,6 +26,7 @@ def parse_arguments():
     parser.add_argument('--weight_max', type=float, default=2, help="Maximum weighting for fase responses (requires --weight_by_speed)")
 
     Args.namespace = parser.parse_args()
+    print(Args.namespace)
 
 class _Args(object):
     def __init__(self):
@@ -68,7 +72,7 @@ class TheApp:
     def __init__(self):
         self.app = customtkinter.CTk()
         self.app.title("")
-        self.database = ImageDatabase(Args.directory, loadfrom=Args.load_from)
+        self.database = ImageDatabase(Args.directory, loadfrom=Args.load_from, trust_extensions=Args.trust)
 
         self.database.sort(reverse=True)
         self.start_order = { f:i for i,f in enumerate(self.database.image_records) }

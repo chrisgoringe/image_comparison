@@ -18,12 +18,12 @@ class ImageRecord:
                 "comparisons" : self.comparisons}
     
 class ImageDatabase:
-    def __init__(self, base_directory, loadfrom=None, add_files=True, remove_files=True):
+    def __init__(self, base_directory, loadfrom=None, add_files=True, remove_files=True, trust_extensions=[]):
         self.base_directory = base_directory
         self.image_records:dict[str, ImageRecord] = {}
         self.metadata:dict = {}
         if loadfrom: self.load_scores(loadfrom)
-        if add_files: self.recursively_add()
+        if add_files: self.recursively_add(trust_extensions)
         if remove_files: self.remove_missing()
 
     def load_scores(self, filename):
@@ -63,7 +63,7 @@ class ImageDatabase:
         l.sort(key=lambda ir:ir.score, reverse=reverse)
         self.image_records = {ir.relative_filepath:ir for ir in l}
 
-    def recursively_add(self):
+    def recursively_add(self, trust_extensions):
         for (dir_path, dir_names, file_names) in os.walk(self.base_directory):
             rel_dir = os.path.relpath(dir_path, self.base_directory)
             for filename in file_names:
@@ -71,7 +71,8 @@ class ImageDatabase:
                 if not relative_path in self.image_records:
                     fullpath = os.path.join(dir_path, filename)
                     try:
-                        Image.open(fullpath)
+                        if not os.path.splitext(fullpath)[1] in trust_extensions:
+                            Image.open(fullpath)
                         self.image_records[relative_path] = ImageRecord(relative_path)
                     except:
                         pass
