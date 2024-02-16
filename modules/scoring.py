@@ -71,7 +71,7 @@ class ImageDatabase:
                 if not relative_path in self.image_records:
                     fullpath = os.path.join(dir_path, filename)
                     try:
-                        if not os.path.splitext(fullpath)[1] in trust_extensions:
+                        if not (trust_extensions and os.path.splitext(fullpath)[1] in trust_extensions):
                             Image.open(fullpath)
                         self.image_records[relative_path] = ImageRecord(relative_path)
                     except:
