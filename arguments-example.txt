@@ -1,0 +1,5 @@
+--directory=C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\2024-02-25\compare
+--scores=scores.csv
+--trust=.png
+--height=512
+--number=100

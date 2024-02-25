@@ -2,18 +2,18 @@ import os, math, json
 from PIL import Image
 
 class ImageRecord:
-    def __init__(self,relative_filepath,comparisons=0,score=0.0):
-        self.relative_filepath = os.path.normpath(relative_filepath)
-        self.comparisons = comparisons
-        self.score = score
+    def __init__(self,relative_path,comparisons=0,score=0.0):
+        self.relative_path = os.path.normpath(relative_path)
+        self.comparisons = int(comparisons)
+        self.score = float(score)
 
     @property
     def printable(self):
-        return f"'{self.relative_filepath}',"+"{:>6.3f},{:>4}".format(self.score, self.comparisons)
+        return f"{self.relative_path},"+"{:>6.3f},{:>4}".format(self.score, self.comparisons)
     
     @property
     def as_dictionary(self):
-        return {"relative_filepath" : self.relative_filepath,
+        return {"relative_path" : self.relative_path,
                 "score" : self.score,
                 "comparisons" : self.comparisons}
     
@@ -29,11 +29,18 @@ class ImageDatabase:
     def load_scores(self, filename):
         scores_path = os.path.join(self.base_directory,filename)
         if os.path.exists(scores_path):
-            with open(scores_path,'r') as f:
-                loaded:dict = json.load(f)
-                self.image_records = loaded.get('ImageRecords',[])
-                for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
-                self.metadata = loaded.get('Metadata', {})
+            if scores_path.endswith("csv"):
+                with open(scores_path,'r') as f:
+                    headers = list(x.strip() for x in f.readline().split(','))
+                    for line in f.readlines():
+                        values = {headers[i] : bit.strip() for i, bit in enumerate(line.split(','))}
+                        self.image_records[values['relative_path']] = ImageRecord(**values)
+            else:
+                with open(scores_path,'r') as f:
+                    loaded:dict = json.load(f)
+                    self.image_records = loaded.get('ImageRecords',[])
+                    for ir in self.image_records: self.image_records[ir] = ImageRecord(**self.image_records[ir])
+                    self.metadata = loaded.get('Metadata', {})
         else:
             print(f"No scorefile to load at {scores_path}")
 
@@ -54,6 +61,7 @@ class ImageDatabase:
     def save_csv(self, filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
+            print("relative_path,score,comparisons", file=f)
             for relative_path in self.image_records:
                 image_record:ImageRecord = self.image_records[relative_path]
                 print(image_record.printable, file=f)
@@ -61,7 +69,7 @@ class ImageDatabase:
     def sort(self, reverse=False):
         l = [self.image_records[x] for x in self.image_records]
         l.sort(key=lambda ir:ir.score, reverse=reverse)
-        self.image_records = {ir.relative_filepath:ir for ir in l}
+        self.image_records = {ir.relative_path:ir for ir in l}
 
     def recursively_add(self, trust_extensions):
         for (dir_path, dir_names, file_names) in os.walk(self.base_directory):
@@ -86,7 +94,7 @@ class ImageDatabase:
         return mar
     
     def get_image(self, ir:ImageRecord) -> Image:
-        return Image.open(os.path.join(self.base_directory, ir.relative_filepath))
+        return Image.open(os.path.join(self.base_directory, ir.relative_path))
 
     @property
     def records(self) -> list[ImageRecord]:

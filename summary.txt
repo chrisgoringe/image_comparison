@@ -29,3 +29,8 @@ Start from model trained on 790 images in training. AB on training4.
   5600 comparisons for   1000 images. Average p value for chosen result 69.0690%. Average bestp 80.8391%. Choice matched 71.0000%.
   5800 comparisons for   1000 images. Average p value for chosen result 74.8177%. Average bestp 82.6293%. Choice matched 80.0000%.
   6000 comparisons for   1000 images. Average p value for chosen result 74.3123%. Average bestp 83.2066%. Choice matched 82.0000%.
+   200 comparisons for     80 images. Average p value for chosen result 56.9548%. Average bestp 66.2409%. Choice matched 52.0000%.
+   200 comparisons for     71 images. Average p value for chosen result 57.7306%. Average bestp 66.4331%. Choice matched 49.0000%.
+   400 comparisons for    143 images. Average p value for chosen result 60.3103%. Average bestp 71.5353%. Choice matched 58.0000%.
+   600 comparisons for    180 images. Average p value for chosen result 61.6269%. Average bestp 73.5372%. Choice matched 66.0000%.
+   800 comparisons for    180 images. Average p value for chosen result 65.8611%. Average bestp 75.8685%. Choice matched 74.0000%.

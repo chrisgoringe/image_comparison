@@ -4,10 +4,16 @@ import scipy
 
 from modules.scoring import ImageDatabase, ImageRecord, ScoreUpdater
 
+class CommentArgumentParser(argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        if arg_line.startswith('#'): return [] 
+        line = "=".join(a.strip() for a in arg_line.split('='))
+        return [line,] if len(line) else []
+
 def parse_arguments():
     to_string_list = lambda s : list( x.strip() for x in s.split(',') )
 
-    parser = argparse.ArgumentParser("Score a set of images by a series of AB comparisons")
+    parser = CommentArgumentParser("Score a set of images by a series of AB comparisons", fromfile_prefix_chars='@')
     parser.add_argument('-d', '--directory', help="Top level directory", required=True)
     parser.add_argument('-s', '--scores', default="scores.json", help="Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved")
     parser.add_argument('-r', '--restart', action="store_true", help="Force a restart (don't reload scores file even if present)")
@@ -117,7 +123,8 @@ class TheApp:
             self.pick_images()
         if self.count>=Args.number or k.char=='q':
             self.database.sort(reverse=True)
-            self.database.save_scores(Args.scores)
+            if Args.scores.endswith("csv"): self.database.save_csv(Args.scores)
+            else: self.database.save_scores(Args.scores)
             if Args.csvfile: self.database.save_csv(Args.csvfile)
 
             summary = self.database.printable + " " + self.score_updater.printable
