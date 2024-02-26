@@ -2,20 +2,37 @@ import os, math, json
 from PIL import Image
 
 class ImageRecord:
-    def __init__(self,relative_path,comparisons=0,score=0.0):
-        self.relative_path = os.path.normpath(relative_path)
-        self.comparisons = int(comparisons)
-        self.score = float(score)
+    header = None
+
+    def __init__(self,**kwargs):
+        self.columns = {k: kwargs[k] for k in kwargs}
+        assert 'relative_path' in self.columns
+        if 'comparisons' not in self.columns: self.columns['comparisons'] = 0
+        if 'score' not in self.columns: self.columns['score'] = 0.0
+        if ImageRecord.header is None: ImageRecord.header = ",".join( f"\"{k}\"" for k in self.columns )
+
+    @property
+    def relative_path(self): return self.columns['relative_path']
+
+    @property
+    def score(self): return float(self.columns['score'])
+
+    @score.setter
+    def score(self, value): self.columns['score'] = str(value)
+
+    @property
+    def comparisons(self): return int(self.columns['comparisons'])
+
+    @comparisons.setter
+    def comparisons(self, value): self.columns['comparisons'] = str(value)
 
     @property
     def printable(self):
-        return f"{self.relative_path},"+"{:>6.3f},{:>4}".format(self.score, self.comparisons)
-    
+        return ",".join( f"\"{self.columns[k]}\"" for k in self.columns )
+
     @property
     def as_dictionary(self):
-        return {"relative_path" : self.relative_path,
-                "score" : self.score,
-                "comparisons" : self.comparisons}
+        return self.columns
     
 class ImageDatabase:
     def __init__(self, base_directory, loadfrom=None, add_files=True, remove_files=True, trust_extensions=[]):
@@ -61,7 +78,7 @@ class ImageDatabase:
     def save_csv(self, filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
-            print("relative_path,score,comparisons", file=f)
+            print(ImageRecord.header, file=f)
             for relative_path in self.image_records:
                 image_record:ImageRecord = self.image_records[relative_path]
                 print(image_record.printable, file=f)

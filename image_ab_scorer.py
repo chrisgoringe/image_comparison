@@ -1,4 +1,4 @@
-import random, math, time, argparse
+import random, math, time, argparse, os
 import customtkinter
 import scipy
 
@@ -15,10 +15,10 @@ def parse_arguments():
 
     parser = CommentArgumentParser("Score a set of images by a series of AB comparisons", fromfile_prefix_chars='@')
     parser.add_argument('-d', '--directory', help="Top level directory", required=True)
-    parser.add_argument('-s', '--scores', default="scores.json", help="Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved")
+    parser.add_argument('-s', '--scores', default="scores.csv", help="Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved")
     parser.add_argument('-r', '--restart', action="store_true", help="Force a restart (don't reload scores file even if present)")
-    parser.add_argument('-c', '--csvfile', help="Save scores as a csv in this file (relative to top level directory) as well as in the scores file")
-    parser.add_argument('-t', '--trust', type=to_string_list, help="Comma separated list of extensions that are trusted to be images (eg -t=.jpg,.png)")
+    parser.add_argument('--savefile', default=None, help="Save scores here (relative to top level directory) instead of in the scores file")
+    parser.add_argument('--trust', type=to_string_list, help="Comma separated list of extensions that are trusted to be images (eg -t=.jpg,.png)")
 
     parser.add_argument('--lcw', type=float, default=0.4, help="Weighting priority towards less frequently compared images (0-0.99)")
     parser.add_argument('--height', type=int, default=768, help="Height of window")
@@ -101,7 +101,6 @@ class TheApp:
 
         self.starttime = time.monotonic()
         
-
     def pick_images(self):
         self.image_records = self.image_chooser.pick_images(Args.number_to_compare)
         for i, image_record in enumerate(self.image_records):
@@ -112,29 +111,39 @@ class TheApp:
                 print(image_record)
         self.lasttime = time.monotonic()
 
+    def save(self):
+        self.database.sort(reverse=True)
+        savein = Args.savefile or Args.scores
+        also_savein = os.path.splitext(savein)[0]+f"_{self.database.total_comparisons}"+os.path.splitext(savein)[1]
+        for filename in [savein, also_savein]:
+            filepath = os.path.join(Args.directory, filename)
+            if filepath.endswith("csv"): self.database.save_csv(filepath)
+            else: self.database.save_scores(filepath)
+
+    def stats(self):
+        summary = self.database.printable + " " + self.score_updater.printable
+        print(summary)
+        with open('summary.txt','a') as f: print(summary,file=f)
+        print("{:>6.3f} s/image".format((time.monotonic()-self.starttime)/self.count))
+
+        spearman = scipy.stats.spearmanr([ self.start_order[f] for f in self.start_order ],
+                                            [ self.start_order[f] for f in self.database.image_records ])
+        print("spearman correlation start to end of run: {:>6.4f}".format(spearman.statistic))
+
+    def update_scores(self, win):
+        time_taken = time.monotonic() - self.lasttime
+        k_fac = clamp(Args.default_seconds / time_taken, Args.weight_min, Args.weight_max) if Args.weight_by_speed else 1.0
+        for i in range(Args.number_to_compare):
+            if i!=win: self.score_updater.update_scores(winner = self.image_records[win], loser=self.image_records[i], k_fac=k_fac)
+        self.count += 1
+
     def keyup(self,k):
         if k.char in "123456789"[:Args.number_to_compare+1]: 
-            time_taken = time.monotonic() - self.lasttime
-            k_fac = clamp(Args.default_seconds / time_taken, Args.weight_min, Args.weight_max) if Args.weight_by_speed else 1.0
-            win = int(k.char)-1
-            for i in range(Args.number_to_compare):
-                if i!=win: self.score_updater.update_scores(winner = self.image_records[win], loser=self.image_records[i], k_fac=k_fac)
-            self.count += 1
+            self.update_scores(win=int(k.char)-1)
             self.pick_images()
         if self.count>=Args.number or k.char=='q':
-            self.database.sort(reverse=True)
-            if Args.scores.endswith("csv"): self.database.save_csv(Args.scores)
-            else: self.database.save_scores(Args.scores)
-            if Args.csvfile: self.database.save_csv(Args.csvfile)
-
-            summary = self.database.printable + " " + self.score_updater.printable
-            print(summary)
-            with open('summary.txt','a') as f: print(summary,file=f)
-            print("{:>6.3f} s/image".format((time.monotonic()-self.starttime)/self.count))
-
-            spearman = scipy.stats.spearmanr([ self.start_order[f] for f in self.start_order ],
-                                             [ self.start_order[f] for f in self.database.image_records ])
-            print("spearman correlation start to end of run: {:>6.4f}".format(spearman.statistic))
+            self.save()
+            self.stats()
             self.app.quit()
         self.app.title("{:>4}/{:<4} {:>6.3f} s/image".format(self.count, Args.number, (time.monotonic()-self.starttime)/self.count))
 
