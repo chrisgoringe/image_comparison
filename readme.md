@@ -13,8 +13,8 @@ options:
   -s SCORES, --scores SCORES
                         Filename of scores file (relative to top level directory) from which scores are loaded (if present) and saved
   -r, --restart         Force a restart (don't reload scores file even if present)
-  -c CSVFILE, --csvfile CSVFILE
-                        Save scores as a csv in this file (relative to top level directory) as well as in the scores file
+  -savefile SAVEFILE
+                        Save scores here (relative to top level directory) instead of in the scores file
   --lcw LCW             Weighting priority towards less frequently compared images (0-0.99)
   --height HEIGHT       Height of window
   --number NUMBER       Number of sets of images to compare
@@ -34,16 +34,16 @@ The only required parameter is `-d DIRECTORY` which should point to a directory 
 
 Click 1 to prefer the left image, 2 to prefer the right image, or q to quit.
 
-At the end of the run, you'll have (in DIRECTORY) a scorefile (`scores.json`), and a progress scorefile (`scores_200.json`). There will also be a summary stats line appended to `summary.txt`.
+At the end of the run, you'll have (in DIRECTORY) a scorefile (`scores.csv`), and a progress scorefile (`scores_200.csv`). There will also be a summary stats line appended to `summary.txt`.
 
 ## Comparing and converging
 
 After a few runs you'll have a set of files like
 ```
-scores_200.json
-scores_400.json
+scores_200.csv
+scores_400.csv
 ...
-scores_1000.json
+scores_1000.csv
 ```
 (note that 100 AB comparisons counts as 200, because we keep track of comparisons per image)
 
