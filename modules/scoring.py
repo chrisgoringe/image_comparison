@@ -9,7 +9,7 @@ class ImageRecord:
         assert 'relative_path' in self.columns
         if 'comparisons' not in self.columns: self.columns['comparisons'] = 0
         if 'score' not in self.columns: self.columns['score'] = 0.0
-        if ImageRecord.header is None: ImageRecord.header = ",".join( f"\"{k}\"" for k in self.columns )
+        if ImageRecord.header is None: ImageRecord.header = ",".join( k for k in self.columns )
 
     @property
     def relative_path(self): return self.columns['relative_path']
@@ -28,7 +28,7 @@ class ImageRecord:
 
     @property
     def printable(self):
-        return ",".join( f"\"{self.columns[k]}\"" for k in self.columns )
+        return ",".join( self.columns[k] for k in self.columns )
 
     @property
     def as_dictionary(self):
@@ -48,9 +48,9 @@ class ImageDatabase:
         if os.path.exists(scores_path):
             if scores_path.endswith("csv"):
                 with open(scores_path,'r') as f:
-                    headers = list(x.strip() for x in f.readline().split(','))
+                    headers = list(x.strip().strip('"') for x in f.readline().split(','))
                     for line in f.readlines():
-                        values = {headers[i] : bit.strip() for i, bit in enumerate(line.split(','))}
+                        values = {headers[i] : bit.strip().strip('"') for i, bit in enumerate(line.split(','))}
                         self.image_records[values['relative_path']] = ImageRecord(**values)
             else:
                 with open(scores_path,'r') as f:
@@ -67,10 +67,6 @@ class ImageDatabase:
                  "Metadata" : self.metadata }
 
     def save_scores(self, filename):
-        self._save_scores(filename)
-        self._save_scores(f"{os.path.splitext(filename)[0]}_{self.total_comparisons}.json")
-
-    def _save_scores(self, filename):
         scores_path = os.path.join(self.base_directory,filename)
         with open(scores_path,'w') as f:
             print(json.dumps(self.as_dictionary, indent=2), file=f)
