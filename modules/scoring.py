@@ -28,7 +28,7 @@ class ImageRecord:
 
     @property
     def printable(self):
-        return ",".join( self.columns[k] for k in self.columns )
+        return ",".join( str(self.columns[k]) for k in self.columns )
 
     @property
     def as_dictionary(self):
@@ -94,9 +94,9 @@ class ImageDatabase:
                     try:
                         if not (trust_extensions and os.path.splitext(fullpath)[1] in trust_extensions):
                             Image.open(fullpath)
-                        self.image_records[relative_path] = ImageRecord(relative_path)
+                        self.image_records[relative_path] = ImageRecord(relative_path=relative_path)
                     except:
-                        pass
+                        print(f"Problem with {relative_path}")
 
     def max_aspect_ratio(self) -> float:
         mar = 0
@@ -124,6 +124,14 @@ class ImageDatabase:
     @property
     def printable(self) -> str:
         return "{:>6} comparisons for {:>6} images.".format(self.total_comparisons, self.image_count)
+    
+    @property
+    def for_csv(self):
+        return (self.total_comparisons, self.image_count)
+    
+    @property
+    def for_csv_headers(self):
+        return ("comparison","images")
 
     def remove_missing(self):
         missing = []
@@ -160,3 +168,11 @@ class ScoreUpdater:
     def printable(self):
         return "Average p value for chosen result {:>6.4f}%. Average bestp {:>6.4f}%. Choice matched {:>6.4f}%.".format(
                 self.average_p * 100, self.average_bestp * 100, self.total_favourite_wins * 100 / self.total_comparisons )
+    
+    @property
+    def for_csv(self):
+        return (self.average_p * 100, self.average_bestp * 100, self.total_favourite_wins * 100 / self.total_comparisons)
+    
+    @property
+    def for_csv_headers(self):
+        return ("average p chosen", "average p best", "matches")

@@ -1,4 +1,4 @@
---directory=C:\Users\chris\Documents\GitHub\ComfyUI_windows_portable\ComfyUI\output\2024-02-25\compare
+--directory=[my directory]
 --scores=scores.csv
 --trust=.png
 --height=512

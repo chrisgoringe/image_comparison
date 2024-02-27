@@ -121,14 +121,21 @@ class TheApp:
             else: self.database.save_scores(filepath)
 
     def stats(self):
-        summary = self.database.printable + " " + self.score_updater.printable
-        print(summary)
-        with open('summary.txt','a') as f: print(summary,file=f)
+
         print("{:>6.3f} s/image".format((time.monotonic()-self.starttime)/self.count))
 
         spearman = scipy.stats.spearmanr([ self.start_order[f] for f in self.start_order ],
                                             [ self.start_order[f] for f in self.database.image_records ])
-        print("spearman correlation start to end of run: {:>6.4f}".format(spearman.statistic))
+        
+        summary = self.database.printable + " " + self.score_updater.printable + "spearman start-end: {:>6.4f}".format(spearman.statistic)
+        print(summary)
+        with open('summary.txt','a') as f: print(summary, file=f)
+
+        if not os.path.exists('summary.csv'):
+            with open('summary.csv', 'w') as f: print(",".join(self.database.for_csv_headers + self.score_updater.for_csv_headers + ("spearman start-end",)), file=f)
+        with open('summary.csv','a') as f: 
+            to_csv = (str(x) for x in (self.database.for_csv + self.score_updater.for_csv + (spearman.statistic,)))
+            print(",".join(to_csv),file=f)
 
     def update_scores(self, win):
         time_taken = time.monotonic() - self.lasttime
