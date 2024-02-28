@@ -3,3 +3,5 @@ local_settings.json
 summary.txt
 summary.csv
 arguments.txt
+*.csv
+summary.txt
