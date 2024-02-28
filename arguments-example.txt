@@ -1,5 +1,25 @@
+# Base directory for images, scorefiles etc.
 --directory=[my directory]
---scores=scores.csv
---trust=.png
---height=512
---number=100
+# Load from scoresfile (if available)
+#--scores=scores.csv
+# Ignore existing scoresfile
+#--restart
+# Save here instead of in --scores
+#--savefile
+# Assume these are images without trying to load them
+--trust=.png,.jpg
+# How much to prefer images that have been shown less
+#--lcw=0.4
+# Height of window on screen
+#--height=512
+# Number of comparisons per run
+#--number=100
+# Number of images per comparison
+#--number_to_compare=2
+# Weight to move scores
+#--k=0.7
+# Weights fast responses higher than slow ones
+#--weight_by_speed
+#--default_seconds=1.5
+#--weight_min=0.5
+#--weight_max=2

@@ -96,7 +96,7 @@ class ImageDatabase:
                             Image.open(fullpath)
                         self.image_records[relative_path] = ImageRecord(relative_path=relative_path)
                     except:
-                        print(f"Problem with {relative_path}")
+                        print(f"{relative_path} isn't an image")
 
     def max_aspect_ratio(self) -> float:
         mar = 0
@@ -108,6 +108,12 @@ class ImageDatabase:
     
     def get_image(self, ir:ImageRecord) -> Image:
         return Image.open(os.path.join(self.base_directory, ir.relative_path))
+    
+    def remove(self, test:callable):
+        remove = []
+        for k in self.image_records:
+            if test(self.image_records[k]): remove.append(k)
+        for k in remove: self.image_records.pop(k)
 
     @property
     def records(self) -> list[ImageRecord]:
