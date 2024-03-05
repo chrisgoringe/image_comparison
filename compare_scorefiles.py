@@ -1,31 +1,30 @@
 from modules.scoring import ImageDatabase
 import scipy
 import matplotlib.pyplot as plt
-import os, argparse
+import os, argparse, time
+
+class CommentArgumentParser(argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        if arg_line.startswith('#'): return [] 
+        line = "=".join(a.strip() for a in arg_line.split('='))
+        return [line,] if len(line) else []
 
 def parse_arguments():
-    parser = argparse.ArgumentParser("Compare a series of scorefiles")
+    global args
+    parser = CommentArgumentParser("Score a set of images by a series of AB comparisons", fromfile_prefix_chars='@')
     parser.add_argument('-d', '--directory', help="Top level directory", required=True)
     parser.add_argument('-n', '--no_plot', action="store_true", help="Don't show a graph")
-    parser.add_argument('-s', '--scores', default="scores.json", help="Filename of scores file (relative to top level directory)")
+    parser.add_argument('-s', '--scores', default="scores.csv", help="Filename of scores file (relative to top level directory)")
     parser.add_argument('-m', '--model_scorefile', help="Plot comparison with model scorefile")
-    Args.namespace = parser.parse_args()
-
-class Args:
-    namespace = None
-    @classmethod
-    def __getattribute__(cls, attr):
-        if hasattr(cls.namespace, attr): return cls.namespace.attr
-        if attr=='model_scorefile': return False
-        if attr=='plot': return not cls.namespace.no_plot
-        raise Exception(f"Don't know about {attr}")
+    args, unknown = parser.parse_known_args()
+    if unknown: print(f"Ignoring unknown arguments {unknown}")
     
 class Cache:
     cache = {}
     @classmethod
     def get(cls, a):
         if not a in cls.cache:
-            id = ImageDatabase(Args.directory,a)
+            id = ImageDatabase(args.directory,loadfrom=a,add_files=False,remove_files=False)
             id.sort()
             cls.cache[a] = { f : i for i,f in enumerate(id.image_records) }
         return cls.cache[a]
@@ -48,10 +47,10 @@ def _compare(rank_map_a,rank_map_b,name_a,name_b) -> float:
 
 def find_numbered_files():
     nf = []
-    for f in os.listdir(Args.directory):
-        if os.path.splitext(f)[1]==".json":
-            if f.startswith(os.path.splitext(Args.scores)[0]+"_"): 
-                number = int(os.path.splitext(f)[0][len(os.path.splitext(Args.score)[0])+1:])
+    for f in os.listdir(args.directory):
+        if os.path.splitext(f)[1]==".csv":
+            if f.startswith(os.path.splitext(args.scores)[0]+"_"): 
+                number = int(os.path.splitext(f)[0][len(os.path.splitext(args.scores)[0])+1:])
                 nf.append((number, f))
     nf.sort()
     return tuple(f for _,f in nf), tuple(n for n,_ in nf)
@@ -60,13 +59,14 @@ if __name__=="__main__":
     parse_arguments()
     files, numbers = find_numbered_files()
 
-    if Args.model_scorefile:
+    if args.model_scorefile:
         print("\n Comparison with model predictions")
-        data = compare((Args.model_scorefile,)+ files)
-        if Args.plot: plt.plot(numbers, data)
+        data = compare((args.model_scorefile,)+ files)
+        if not args.no_plot: plt.plot(numbers, data)
     
     print("\n Comparisons with previous database")
     data = list(compare(files[i:i+2])[0] for i in range(len(files)-1))
-    if Args.plot: plt.plot(numbers[1:],  data )
-
-    if Args.plot: plt.show()
+    if not args.no_plot:
+        plt.plot(numbers[1:],  data )
+        plt.show()
+        while(True): time.sleep(1)
