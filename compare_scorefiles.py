@@ -34,7 +34,7 @@ def compare(files):
     results = []
     for rank_b, name_b in zip(ranks, files):
         if name_b!=files[0]:
-            results.append(_compare(ranks[0],rank_b,files[0][:-5],name_b[:-5]))
+            results.append(_compare(ranks[0],rank_b,files[0][:-4],name_b[:-4]))
     return results
 
 def _compare(rank_map_a,rank_map_b,name_a,name_b) -> float:

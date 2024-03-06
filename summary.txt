@@ -5,3 +5,40 @@
   1400 comparisons for    200 images. Average p value for chosen result 79.1333%. Average bestp 84.1847%. Choice matched 84.0000%.spearman start-end: 0.9519
   1600 comparisons for    200 images. Average p value for chosen result 77.8301%. Average bestp 85.2207%. Choice matched 81.0000%.spearman start-end: 0.9649
   1800 comparisons for    200 images. Average p value for chosen result 82.7557%. Average bestp 87.2566%. Choice matched 91.0000%.spearman start-end: 0.9739
+   200 comparisons for    152 images. Average p value for chosen result 53.4414%. Average bestp 66.0615%. Choice matched 36.0000%.spearman start-end: 0.0263
+   400 comparisons for    152 images. Average p value for chosen result 61.0673%. Average bestp 73.7109%. Choice matched 65.0000%.spearman start-end: 0.7097
+   600 comparisons for    152 images. Average p value for chosen result 68.3875%. Average bestp 82.1186%. Choice matched 70.0000%.spearman start-end: 0.8271
+   800 comparisons for    152 images. Average p value for chosen result 67.6370%. Average bestp 85.0944%. Choice matched 73.0000%.spearman start-end: 0.8473
+  1000 comparisons for    152 images. Average p value for chosen result 68.4304%. Average bestp 82.9519%. Choice matched 73.0000%.spearman start-end: 0.8728
+  1200 comparisons for    152 images. Average p value for chosen result 67.5217%. Average bestp 84.5315%. Choice matched 74.0000%.spearman start-end: 0.8518
+  1400 comparisons for    152 images. Average p value for chosen result 72.5641%. Average bestp 84.2822%. Choice matched 78.0000%.spearman start-end: 0.8948
+  1600 comparisons for    152 images. Average p value for chosen result 72.2502%. Average bestp 88.2260%. Choice matched 75.0000%.spearman start-end: 0.8987
+  1800 comparisons for    152 images. Average p value for chosen result 70.9527%. Average bestp 89.5403%. Choice matched 71.0000%.spearman start-end: 0.8819
+  2000 comparisons for    152 images. Average p value for chosen result 67.3937%. Average bestp 84.6122%. Choice matched 70.0000%.spearman start-end: 0.8791
+   200 comparisons for    248 images. Average p value for chosen result 54.3545%. Average bestp 61.0022%. Choice matched 29.0000%.spearman start-end: 0.1001
+   400 comparisons for    248 images. Average p value for chosen result 61.8031%. Average bestp 72.1050%. Choice matched 63.0000%.spearman start-end: 0.7004
+   600 comparisons for    248 images. Average p value for chosen result 61.4104%. Average bestp 78.6829%. Choice matched 62.0000%.spearman start-end: 0.7420
+   800 comparisons for    248 images. Average p value for chosen result 68.6423%. Average bestp 79.3456%. Choice matched 74.0000%.spearman start-end: 0.9052
+  1000 comparisons for    248 images. Average p value for chosen result 66.3317%. Average bestp 81.3219%. Choice matched 70.0000%.spearman start-end: 0.8757
+  1200 comparisons for    248 images. Average p value for chosen result 63.9327%. Average bestp 81.5254%. Choice matched 67.0000%.spearman start-end: 0.9176
+  1400 comparisons for    248 images. Average p value for chosen result 68.7713%. Average bestp 83.5805%. Choice matched 71.0000%.spearman start-end: 0.9233
+  1600 comparisons for    248 images. Average p value for chosen result 63.5620%. Average bestp 81.0337%. Choice matched 64.0000%.spearman start-end: 0.9281
+  1800 comparisons for    248 images. Average p value for chosen result 72.9058%. Average bestp 84.7175%. Choice matched 78.0000%.spearman start-end: 0.9363
+  2000 comparisons for    248 images. Average p value for chosen result 68.3463%. Average bestp 83.9220%. Choice matched 72.0000%.spearman start-end: 0.9330
+   200 comparisons for    160 images. Average p value for chosen result 53.1051%. Average bestp 63.6181%. Choice matched 37.0000%.spearman start-end: 0.0578
+   400 comparisons for    160 images. Average p value for chosen result 54.1085%. Average bestp 77.3804%. Choice matched 55.0000%.spearman start-end: 0.5451
+   600 comparisons for    160 images. Average p value for chosen result 54.4680%. Average bestp 78.9427%. Choice matched 57.0000%.spearman start-end: 0.6384
+   800 comparisons for    160 images. Average p value for chosen result 63.2123%. Average bestp 83.4068%. Choice matched 66.0000%.spearman start-end: 0.7830
+   200 comparisons for    100 images. Average p value for chosen result 56.3931%. Average bestp 65.8373%. Choice matched 46.0000%.spearman start-end: -0.1206
+   400 comparisons for    100 images. Average p value for chosen result 63.1037%. Average bestp 78.1591%. Choice matched 62.0000%.spearman start-end: 0.5642
+   600 comparisons for    100 images. Average p value for chosen result 68.5261%. Average bestp 82.6748%. Choice matched 75.0000%.spearman start-end: 0.7844
+   800 comparisons for    100 images. Average p value for chosen result 68.8121%. Average bestp 84.4004%. Choice matched 71.0000%.spearman start-end: 0.8302
+  1000 comparisons for    100 images. Average p value for chosen result 74.5984%. Average bestp 86.4078%. Choice matched 78.0000%.spearman start-end: 0.8912
+  1200 comparisons for    100 images. Average p value for chosen result 76.4291%. Average bestp 87.2505%. Choice matched 79.0000%.spearman start-end: 0.8902
+   200 comparisons for    100 images. Average p value for chosen result 54.4834%. Average bestp 65.7328%. Choice matched 45.0000%.spearman start-end: 0.0111
+   400 comparisons for    100 images. Average p value for chosen result 57.3629%. Average bestp 78.0556%. Choice matched 60.0000%.spearman start-end: 0.5601
+   600 comparisons for    100 images. Average p value for chosen result 60.0052%. Average bestp 82.3677%. Choice matched 61.0000%.spearman start-end: 0.5873
+   800 comparisons for    100 images. Average p value for chosen result 64.8717%. Average bestp 85.1262%. Choice matched 69.0000%.spearman start-end: 0.7116
+  2200 comparisons for    400 images. Average p value for chosen result 77.6218%. Average bestp 81.4532%. Choice matched 88.0000%.spearman start-end: 0.9526
+  2200 comparisons for    400 images. Average p value for chosen result 73.7315%. Average bestp 80.9623%. Choice matched 80.0000%.spearman start-end: 0.9406
+  1200 comparisons for    400 images. Average p value for chosen result 65.6887%. Average bestp 72.0525%. Choice matched 77.0000%.spearman start-end: 0.8452
